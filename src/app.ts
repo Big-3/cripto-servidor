@@ -8,7 +8,10 @@ app.set('PORT', process.env.PORT || 8080);
 
 // MÒDULS DE SERVIDOR
 app.use(express.json());
+app.use(cors());
 
 // ENDPOINTS
 // routes. @ip/api/<endpoint>
 app.use('/api', erouter);
+
+export default app;

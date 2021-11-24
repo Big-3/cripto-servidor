@@ -41,5 +41,7 @@ export class KeyManagerImpl implements KeyManager{
 	}
 
 	// Teardown
-	public teardown(){ this.keyMap.clear(); }
+	public teardown(): void {
+		this.keyMap.clear();
+	}
 }

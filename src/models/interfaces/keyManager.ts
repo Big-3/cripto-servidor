@@ -2,12 +2,12 @@ import {PublicKey, PrivateKey} from "@criptografia/modul-rsa";
 
 export interface KeyManager{
 		// adder
-		public addKeys(privKey?: PrivateKey);
+		addKeys(privKey?: PrivateKey): string;
 		
 		// Getters
-		public getPrivateKey(identifier?: string): PrivateKey;
-		public getPublicKey(identifier?: string): PublicKey;
+		getPrivateKey(identifier?: string): PrivateKey;
+		getPublicKey(identifier?: string): PublicKey;
 
 		// Teardown
-		public teardown();
+		teardown(): void;
 }
