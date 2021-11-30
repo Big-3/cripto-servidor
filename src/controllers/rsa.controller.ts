@@ -1,8 +1,8 @@
 import {Request, Response} from 'express';
-import * as bic from 'bigint-conversion';
 import {KeyManagerImpl} from '../models/keyManagerImpl';
 import {generateKeys, PublicKey, PrivateKey} from '@criptografia/modul-rsa';
-import * as crypto from 'crypto';
+import * as sha from 'object-sha';
+import * as bic from 'bigint-conversion';
 
 export async function generateBothKeys(req: Request, res: Response): Promise<Response>{
 	const n_bits = req.query.nbits; // https://<ip>/api/generateKeys?nbits=512
@@ -15,7 +15,8 @@ export async function generateBothKeys(req: Request, res: Response): Promise<Res
 	const pubKey: PublicKey = privKey.getPublicKey();
 	const keyBody = {
 		identifier: identifier,
-		e: bic.bigintToBase64(pubKey.getExpE())
+		e: bic.bigintToBase64(pubKey.getExpE()),
+		n: bic.bigintToBase64(pubKey.getModN())
 	};
 
 	// HTTP(s): CODI 201 significa que s'ha pogut crear l'objecte.
@@ -49,18 +50,11 @@ export async function encryptMessage(req: Request, res: Response): Promise<Respo
 		"c": "<encmsg>"
 	}
 	*/
-
-	//Procés de signatura del missatge hash
-	const hash: bigint = await bic.base64ToBigint(crypto.createHash('sha1').update(msg).digest('base64'));
-	const sign = await bic.bigintToBase64(privKey.sign(hash));
-
-	return res.status(200).json({encmsg: encmsg, sign: sign});
-
+	return res.status(200).json({encmsg: encmsg});
 }
 
-
 export async function decryptMessage(req: Request, res: Response): Promise<Response>{
-	const {identifier, encmsg, vald} = req.body;
+	const {identifier, encmsg} = req.body;
 	let keyManager = KeyManagerImpl.getInstance();
 
 	const privKey: PrivateKey = await keyManager.getPrivateKey(identifier);
@@ -68,10 +62,32 @@ export async function decryptMessage(req: Request, res: Response): Promise<Respo
 
 	const msg = await bic.bigintToText(privKey.decrypt(c));
 
-	//Procés de validació de la signatura
-	const pubKey: PublicKey = privKey.getPublicKey();
-	const validation = await bic.bigintToBase64(pubKey.verify(bic.base64ToBigint(vald)));
-
-	return res.status(200).json({msg: msg, validation: validation});
+	return res.status(200).json({msg: msg});
 }
 
+export async function signMessage(req: Request, res: Response): Promise<Response>{
+	const {identifier, msg} = req.body;
+	let keyManager = KeyManagerImpl.getInstance();
+
+	const privKey: PrivateKey = await keyManager.getPrivateKey(identifier);
+
+	const digest: string = await sha.digest(msg, 'SHA-256');
+
+	const hash: bigint = bic.textToBigint(digest);
+	const signature: string = await bic.bigintToBase64(privKey.sign(hash));
+
+	return res.status(200).json({signature: signature});
+}
+
+export async function verifyMessage(req: Request, res: Response): Promise<Response>{
+	const {identifier, signature} = req.body;
+	let keyManager = KeyManagerImpl.getInstance();
+
+	const privKey: PrivateKey = await keyManager.getPrivateKey(identifier);
+	const pubKey: PublicKey = privKey.getPublicKey();
+
+	const hash: bigint = await bic.base64ToBigint(signature);
+	const digest: string = await bic.bigintToText(pubKey.verify(hash));
+
+	return res.status(200).json({digest: digest});
+}

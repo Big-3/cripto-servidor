@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import erouter from './routes/erouter';
+import rsaRouter from './routes/rsa.router';
 
 const app = express();
 
@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 // ENDPOINTS
-// routes. @ip/api/<endpoint>
-app.use('/api', erouter);
+// routes. @ip/api/rsa/<endpoint>
+app.use('/api/rsa', rsaRouter);
 
 export default app;
