@@ -5,22 +5,26 @@ import * as sha from 'object-sha';
 import * as bic from 'bigint-conversion';
 
 export async function generateBothKeys(req: Request, res: Response): Promise<Response>{
-	const n_bits = req.query.nbits; // https://<ip>/api/generateKeys?nbits=512
+	const nbits = req.query.nbits as string; // https://<ip>/api/generateKeys?nbits=512
 	let keyManager = KeyManagerImpl.getInstance();
 
-	//generate privateKey and add it to the list
-	const privKey: PrivateKey = await generateKeys();
-	const identifier: string = await keyManager.addKeys(privKey);
+	if(nbits){
+		//generate privateKey and add it to the list
+		const privKey: PrivateKey = await generateKeys(parseInt(nbits, 10));
+		const identifier: string = await keyManager.addKeys(privKey);
 
-	const pubKey: PublicKey = privKey.getPublicKey();
-	const keyBody = {
-		identifier: identifier,
-		e: bic.bigintToBase64(pubKey.getExpE()),
-		n: bic.bigintToBase64(pubKey.getModN())
-	};
+		const pubKey: PublicKey = privKey.getPublicKey();
+		const keyBody = {
+			identifier: identifier,
+			e: bic.bigintToBase64(pubKey.getExpE()),
+			n: bic.bigintToBase64(pubKey.getModN())
+		};
 
-	// HTTP(s): CODI 201 significa que s'ha pogut crear l'objecte.
-	return res.status(201).json(keyBody);
+		// HTTP(s): CODI 201 significa que s'ha pogut crear l'objecte.
+		return res.status(201).json(keyBody);
+	} else {
+		return res.status(400).json({error: "could not create."});
+	}
 }
 
 export async function encryptMessage(req: Request, res: Response): Promise<Response>{
